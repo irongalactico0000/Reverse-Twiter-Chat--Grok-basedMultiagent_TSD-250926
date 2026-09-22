@@ -6,6 +6,7 @@ const KEYS = {
   positions: ['trading', 'positions'] as const,
   orders: ['trading', 'orders'] as const,
   safety: ['trading', 'safety'] as const,
+  capabilities: ['bridge', 'capabilities'] as const,
   proposals: ['bridge', 'proposals'] as const,
   bridgePositions: ['bridge', 'positions'] as const,
   bridgeEvents: ['bridge', 'events'] as const,
@@ -22,6 +23,14 @@ export const useOpenOrders = () =>
 
 export const useTradingSafety = () =>
   useQuery({ queryKey: KEYS.safety, queryFn: tradingApi.getSafety, refetchInterval: 15000 });
+
+/** Server-authoritative mode/capabilities — UI must not invent LIVE. */
+export const useBridgeCapabilities = () =>
+  useQuery({
+    queryKey: KEYS.capabilities,
+    queryFn: bridgeApi.getCapabilities,
+    refetchInterval: 15000,
+  });
 
 export const useBridgeProposals = () =>
   useQuery({ queryKey: KEYS.proposals, queryFn: bridgeApi.listProposals, refetchInterval: 5000 });

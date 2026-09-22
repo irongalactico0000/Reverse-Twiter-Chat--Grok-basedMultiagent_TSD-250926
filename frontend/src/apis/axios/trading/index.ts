@@ -89,8 +89,31 @@ export const tradingApi = {
   getSafety: () => api.get('/safety').then(r => r.data),
 };
 
+export interface BridgeCapabilities {
+  live_trading: boolean;
+  paper_trading: boolean;
+  mode: 'paper' | 'live' | string;
+  mode_authority: 'server' | string;
+  target_types: string[];
+  target_types_planned?: string[];
+  execution_engines: string[];
+  nautilus_paper_env?: string;
+  mutations_require_token?: boolean;
+  chart?: string;
+  accounts?: Array<{
+    account_id: string;
+    name: string;
+    status: string;
+    supports_orders: boolean;
+    is_paper: boolean;
+    live_trading: boolean;
+    mode: string;
+  }>;
+}
+
 export const bridgeApi = {
   getSafety: () => bridge.get('/safety').then(r => r.data),
+  getCapabilities: () => bridge.get<BridgeCapabilities>('/capabilities').then(r => r.data),
   proposeTarget: (body: {
     instrument_id: string;
     target_type?: 'quantity' | 'weight' | 'notional';

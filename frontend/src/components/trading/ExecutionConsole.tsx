@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import { useOpenOrders, usePositions, usePlaceOrder, useCancelOrder, useBrokers } from '../../apis/queries/trading';
+import {
+  useOpenOrders,
+  usePositions,
+  usePlaceOrder,
+  useCancelOrder,
+  useBrokers,
+  useBridgeCapabilities,
+  useTradingSafety,
+} from '../../apis/queries/trading';
 
 const Wrapper = styled.div`
   display: flex;
@@ -34,16 +42,24 @@ const ModeToggle = styled.div`
   margin-left: auto;
 `;
 
-const ModeBtn = styled.button<{ active?: boolean; danger?: boolean }>`
+const ModeChip = styled.span<{ active?: boolean; danger?: boolean; muted?: boolean }>`
   padding: 3px 10px;
   border-radius: 4px;
-  border: 1px solid ${p => p.danger ? '#ef4444' : '#374151'};
-  background: ${p => p.active && p.danger ? '#7f1d1d' : p.active ? '#1e3a5f' : 'transparent'};
-  color: ${p => p.danger ? '#fca5a5' : '#9ca3af'};
+  border: 1px solid ${p => (p.danger ? '#7f1d1d' : '#374151')};
+  background: ${p => (p.active ? (p.danger ? '#7f1d1d' : '#1e3a5f') : 'transparent')};
+  color: ${p => (p.danger ? '#6b7280' : p.muted ? '#6b7280' : '#9ca3af')};
   font-size: 11px;
   font-weight: 700;
-  cursor: pointer;
   letter-spacing: 0.05em;
+  opacity: ${p => (p.muted ? 0.55 : 1)};
+  cursor: default;
+`;
+
+const CapHint = styled.p`
+  margin: 0 0 10px;
+  font-size: 11px;
+  color: #94a3b8;
+  line-height: 1.4;
 `;
 
 const Grid2 = styled.div`
@@ -95,9 +111,9 @@ const SideBtn = styled.button<{ side: 'BUY' | 'SELL'; active?: boolean }>`
   flex: 1;
   padding: 8px;
   border-radius: 4px;
-  border: 1px solid ${p => p.side === 'BUY' ? '#166534' : '#7f1d1d'};
-  background: ${p => p.active ? (p.side === 'BUY' ? '#14532d' : '#450a0a') : 'transparent'};
-  color: ${p => p.side === 'BUY' ? '#86efac' : '#fca5a5'};
+  border: 1px solid ${p => (p.side === 'BUY' ? '#166534' : '#7f1d1d')};
+  background: ${p => (p.active ? (p.side === 'BUY' ? '#14532d' : '#450a0a') : 'transparent')};
+  color: ${p => (p.side === 'BUY' ? '#86efac' : '#fca5a5')};
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
@@ -138,13 +154,18 @@ const Td = styled.td`
 `;
 
 const PlBadge = styled.span<{ positive?: boolean }>`
-  color: ${p => p.positive ? '#86efac' : '#fca5a5'};
+  color: ${p => (p.positive ? '#86efac' : '#fca5a5')};
   font-weight: 600;
 `;
 
+const AccountList = styled.ul`
+  margin: 0 0 10px;
+  padding-left: 16px;
+  font-size: 11px;
+  color: #cbd5e1;
+`;
+
 export default function ExecutionConsole() {
-  const [mode, setMode] = useState<'PAPER' | 'LIVE'>('PAPER');
-  const [liveConfirmed, setLiveConfirmed] = useState(false);
   const [side, setSide] = useState<'BUY' | 'SELL'>('BUY');
   const [symbol, setSymbol] = useState('');
   const [qty, setQty] = useState('');
@@ -155,23 +176,18 @@ export default function ExecutionConsole() {
   const { data: orders = [] } = useOpenOrders();
   const { data: positions = [] } = usePositions();
   const { data: brokers = [] } = useBrokers();
+  const caps = useBridgeCapabilities();
+  const safety = useTradingSafety();
   const placeOrder = usePlaceOrder();
   const cancelOrder = useCancelOrder();
 
+  const liveAllowed = Boolean(caps.data?.live_trading);
+  const mode = (caps.data?.mode ?? 'paper').toUpperCase();
+  const mutationsOn = Boolean(safety.data?.mutations_enabled);
   const connectedBrokers = brokers.filter(b => b.status === 'CONNECTED' && b.supports_orders);
 
-  const handleLiveToggle = () => {
-    if (mode === 'PAPER') {
-      const confirmed = window.prompt('Type LIVE to enable live trading:');
-      if (confirmed === 'LIVE') { setMode('LIVE'); setLiveConfirmed(true); }
-    } else {
-      setMode('PAPER');
-      setLiveConfirmed(false);
-    }
-  };
-
   const handleSubmit = async () => {
-    if (!symbol || !qty) return;
+    if (!symbol || !qty || !mutationsOn) return;
     await placeOrder.mutateAsync({
       broker_id: brokerId,
       symbol: symbol.toUpperCase(),
@@ -187,15 +203,35 @@ export default function ExecutionConsole() {
 
   return (
     <Wrapper>
-      {/* Order Entry */}
       <Panel>
         <Title>
           Order Entry
           <ModeToggle>
-            <ModeBtn active={mode === 'PAPER'} onClick={() => setMode('PAPER')}>PAPER</ModeBtn>
-            <ModeBtn active={mode === 'LIVE'} danger onClick={handleLiveToggle}>LIVE</ModeBtn>
+            <ModeChip active={!liveAllowed} muted={false}>
+              {mode || 'PAPER'}
+            </ModeChip>
+            <ModeChip danger muted={!liveAllowed} title="Server-authoritative — client cannot enable LIVE">
+              LIVE {liveAllowed ? 'ON' : 'LOCKED'}
+            </ModeChip>
           </ModeToggle>
         </Title>
+
+        <CapHint>
+          Mode authority: {caps.data?.mode_authority ?? '…'} · live=
+          {String(caps.data?.live_trading ?? false)} · target_types=
+          {(caps.data?.target_types ?? []).join(',') || '…'}
+        </CapHint>
+
+        {(caps.data?.accounts?.length ?? 0) > 0 && (
+          <AccountList>
+            {caps.data!.accounts!.map(a => (
+              <li key={a.account_id}>
+                {a.name}: {a.supports_orders ? 'orders' : 'data'} ·{' '}
+                {a.is_paper ? 'paper' : 'live-flag'} · {a.status}
+              </li>
+            ))}
+          </AccountList>
+        )}
 
         <Field style={{ marginBottom: 8 }}>
           <Label>Broker</Label>
@@ -237,14 +273,17 @@ export default function ExecutionConsole() {
         </Grid2>
 
         <SubmitBtn
-          disabled={placeOrder.isPending || connectedBrokers.length === 0}
+          disabled={
+            placeOrder.isPending ||
+            connectedBrokers.length === 0 ||
+            !mutationsOn
+          }
           onClick={handleSubmit}
         >
           {placeOrder.isPending ? 'Sending…' : `${side} ${symbol || '—'}`}
         </SubmitBtn>
       </Panel>
 
-      {/* Positions */}
       <Panel>
         <Title>Positions</Title>
         <Table>
@@ -273,7 +312,6 @@ export default function ExecutionConsole() {
         </Table>
       </Panel>
 
-      {/* Open Orders */}
       <Panel>
         <Title>Open Orders</Title>
         <Table>

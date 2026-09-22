@@ -1,6 +1,7 @@
 import styled from 'styled-components';
 import {
   useApproveProposal,
+  useBridgeCapabilities,
   useBridgeEvents,
   useBridgePositions,
   useBridgeProposals,
@@ -62,6 +63,7 @@ const List = styled.ul`
 
 export default function TargetBridgePanel() {
   const safety = useTradingSafety();
+  const caps = useBridgeCapabilities();
   const proposals = useBridgeProposals();
   const positions = useBridgePositions();
   const events = useBridgeEvents();
@@ -78,8 +80,9 @@ export default function TargetBridgePanel() {
         Live trading is disabled. Mutations require TRADING_MUTATIONS_ENABLED + token.
       </Hint>
       <Hint>
-        safety: mutations={String(safety.data?.mutations_enabled ?? '…')} live=
-        {String(safety.data?.live_trading_allowed ?? false)}
+        safety: mutations={String(safety.data?.mutations_enabled ?? '…')} · mode=
+        {caps.data?.mode ?? '…'} · live={String(caps.data?.live_trading ?? false)} · authority=
+        {caps.data?.mode_authority ?? '…'}
       </Hint>
       <Row>
         <Btn

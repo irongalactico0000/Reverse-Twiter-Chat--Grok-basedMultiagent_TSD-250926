@@ -11,6 +11,28 @@ from .models import ApprovalRequest, TargetPositionRequest, TargetProposal
 router = APIRouter(prefix="/api/v1/bridge", tags=["Trading Bridge (paper)"])
 
 
+def _account_capabilities() -> list[dict]:
+    """Per-broker capability chips — UI must not invent Full/Data/Live flags."""
+    try:
+        from ..trading.broker_pool import get_pool
+
+        pool = get_pool()
+        return [
+            {
+                "account_id": info.id,
+                "name": info.name,
+                "status": str(info.status),
+                "supports_orders": info.supports_orders,
+                "is_paper": info.is_paper,
+                "live_trading": False,  # hard gate until plan gates pass
+                "mode": "paper" if info.is_paper else "paper_forced",
+            }
+            for info in pool.list_brokers()
+        ]
+    except Exception:  # noqa: BLE001 — capabilities must still return if pool missing
+        return []
+
+
 @router.get("/safety")
 async def bridge_safety():
     status = trading_safety_status()
@@ -19,13 +41,15 @@ async def bridge_safety():
     status["capabilities"] = {
         "live_trading": False,
         "paper_trading": True,
+        "mode": "paper",
+        "mode_authority": "server",
         "target_types": ["quantity"],
         "target_types_planned": ["weight", "notional"],
         "execution_engines": ["ledger_sim", "nautilus_paper_job"],
         "nautilus_paper_env": "TSD_USE_NAUTILUS_PAPER",
         "mutations_require_token": True,
         "chart": "/static/chart.html",
-        "mode_authority": "server",
+        "accounts": _account_capabilities(),
     }
     return status
 

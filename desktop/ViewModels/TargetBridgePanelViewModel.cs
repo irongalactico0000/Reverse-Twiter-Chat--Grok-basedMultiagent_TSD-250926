@@ -20,6 +20,8 @@ public partial class TargetBridgePanelViewModel : ViewModelBase
     [ObservableProperty] string _targetValue = "0.20";
     [ObservableProperty] string _currentQuantity = "0.18";
     [ObservableProperty] bool _mutationsEnabled;
+    [ObservableProperty] bool _liveTradingAllowed;
+    [ObservableProperty] string _modeLabel = "paper";
     [ObservableProperty] string _statusMessage = string.Empty;
 
     public TargetBridgePanelViewModel(TradingApiClient api)
@@ -37,6 +39,10 @@ public partial class TargetBridgePanelViewModel : ViewModelBase
         {
             var safety = await _api.GetSafetyAsync();
             MutationsEnabled = safety?.MutationsEnabled ?? false;
+
+            var caps = await _api.GetCapabilitiesAsync();
+            LiveTradingAllowed = caps?.LiveTrading ?? false;
+            ModeLabel = caps?.Mode ?? "paper";
 
             var proposals = await _api.GetProposalsAsync() ?? [];
             Proposals.Clear();

@@ -14,6 +14,7 @@ public partial class ExecutionConsoleViewModel : ViewModelBase
 
     public ObservableCollection<Position> Positions { get; } = [];
     public ObservableCollection<OpenOrder> Orders { get; } = [];
+    public ObservableCollection<BridgeAccountCapability> Accounts { get; } = [];
 
     // Order entry
     [ObservableProperty] string _symbol = string.Empty;
@@ -22,12 +23,16 @@ public partial class ExecutionConsoleViewModel : ViewModelBase
     [ObservableProperty] string _selectedSide = "BUY";
     [ObservableProperty] string _selectedOrderType = "MARKET";
     [ObservableProperty] string _selectedBrokerId = "alpaca";
-    [ObservableProperty] bool _isLiveMode;
+    [ObservableProperty] string _modeLabel = "PAPER";
+    [ObservableProperty] bool _liveTradingAllowed;
+    [ObservableProperty] string _modeAuthority = "server";
     [ObservableProperty] string _statusMessage = string.Empty;
 
     public bool IsLimitOrder => SelectedOrderType == "LIMIT";
+    public bool IsPaperMode => !LiveTradingAllowed;
 
     partial void OnSelectedOrderTypeChanged(string value) => OnPropertyChanged(nameof(IsLimitOrder));
+    partial void OnLiveTradingAllowedChanged(bool value) => OnPropertyChanged(nameof(IsPaperMode));
 
     public ExecutionConsoleViewModel(TradingApiClient api)
     {
@@ -42,6 +47,19 @@ public partial class ExecutionConsoleViewModel : ViewModelBase
     {
         try
         {
+            var caps = await _api.GetCapabilitiesAsync();
+            if (caps != null)
+            {
+                LiveTradingAllowed = caps.LiveTrading;
+                ModeLabel = string.IsNullOrWhiteSpace(caps.Mode)
+                    ? (caps.LiveTrading ? "LIVE" : "PAPER")
+                    : caps.Mode.ToUpperInvariant();
+                ModeAuthority = caps.ModeAuthority ?? "server";
+                Accounts.Clear();
+                foreach (var a in caps.Accounts ?? [])
+                    Accounts.Add(a);
+            }
+
             var positions = await _api.GetPositionsAsync() ?? [];
             Positions.Clear();
             foreach (var p in positions) Positions.Add(p);

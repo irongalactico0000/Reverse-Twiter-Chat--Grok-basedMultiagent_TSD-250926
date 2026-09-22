@@ -58,8 +58,8 @@ public class TradingApiClient(HttpClient http)
     public Task<SafetyStatus?> GetSafetyAsync() =>
         http.GetFromJsonAsync<SafetyStatus>("api/v1/trading/safety", Opts);
 
-    public Task<Dictionary<string, object>?> GetCapabilitiesAsync() =>
-        http.GetFromJsonAsync<Dictionary<string, object>>("api/v1/bridge/capabilities", Opts);
+    public Task<BridgeCapabilities?> GetCapabilitiesAsync() =>
+        http.GetFromJsonAsync<BridgeCapabilities>("api/v1/bridge/capabilities", Opts);
 
     // ── Bridge (paper target positions) ───────────────────────────────────
     public async Task<TargetProposal?> ProposeTargetAsync(ProposeTargetRequest req)

@@ -48,7 +48,7 @@ See `docs/spikes/nautilus-compat-report.md`. All B1–B10 PASS. Pytest: 11 passe
 | C1 | Command identity persistence | **DONE** — SQLite in `backend/back-end/trading_bridge/store.py` + spike JSON/`c1_command_identity.sql` |
 | C2 | propose_target → approve → paper fill API | **DONE** — `/api/v1/bridge/*` (ledger_sim default; optional `TSD_USE_NAUTILUS_PAPER=true`) |
 | C3 | Wire React `/trading` to bridge APIs | **DONE** — TargetBridgePanel.tsx + bridgeApi |
-| C4 | Server-authoritative Paper/Live capabilities | **TODO** (live still forced false; server should broadcast account capabilities) |
+| C4 | Server-authoritative Paper/Live capabilities | **DONE** — `GET /api/v1/bridge/capabilities` (+ accounts[]); React/Avalonia display server mode; client LIVE toggle removed |
 | C5 | Agent propose_target + approval timeline in UI | **DONE** — trading_proposal_agent added to host_agent sub_agents; TargetBridgePanel shows proposals |
 | C6 | Kill switch | **DONE** API (`POST /api/v1/bridge/kill_switch`) |
 
@@ -58,12 +58,44 @@ See `docs/spikes/nautilus-compat-report.md`. All B1–B10 PASS. Pytest: 11 passe
 TSD_USE_NAUTILUS_PAPER=true
 ```
 
-Uses `docs/spikes/nautilus-1.231.0/tsd_bridge/paper_runner.py` from `TradingBridge.execute_paper`. Default remains ledger_sim so the API process does not require `nautilus_trader` installed in the backend venv.
+Uses spike-venv subprocess → `trading_bridge.nautilus_worker` → `docs/spikes/nautilus-1.231.0/tsd_bridge/paper_runner.py`.
+Default remains `ledger_sim` so the API process does not require `nautilus_trader` in the backend venv.
+
+### Corrected handoff for next agent (Grok) — do NOT redo A/B below
+
+**Already done (do not re-implement):**
+- `GET /static/chart.html` + StaticFiles mount (`backend/back-end/static/chart.html`)
+- Avalonia converters + ViewLocator + WinExe/Exe conditional csproj
+- Nautilus worker wiring (`nautilus_worker.py`, facade subprocess when `TSD_USE_NAUTILUS_PAPER=true`)
+- C4 capabilities UI binding
+
+**Give Grok these remaining self-contained tasks:**
+
+#### Task C — strategy catalog from deployments (large) — **primary**
+
+Replace hardcoded `DEMO_STRATEGIES` in:
+- `desktop/ViewModels/StrategyCatalogViewModel.cs`
+- `frontend/src/components/trading/StrategyCatalog.tsx`
+
+Add:
+1. SQLite `deployments` table in `trading_bridge/store.py` (id, strategy_name, version, mode=paper|live, status, symbol, broker, signal, pnl, updated_at)
+2. `GET/POST /api/v1/bridge/deployments` (+ optional PATCH status)
+3. Agent tool `create_deployment` on `trading_proposal_agent` via `trading_tools.py`
+4. Wire both UIs to poll the list
+
+#### Task D — DSM bars into chart.html (medium)
+
+Keep `/static/chart.html`. Add `GET /api/v1/bridge/bars?symbol=BTCUSDT&limit=180` returning OHLC JSON (fixture OK first). Chart JS fetches that instead of `seedBars()`. Label toolbar SYNTHETIC → BARS when non-empty. DSM live feed can replace the fixture later.
+
+#### Task E — (optional) persistent Nautilus worker
+
+Current worker is **one-shot subprocess per approve**. Only if demo needs soak: long-lived process + JSONL IPC. Not required for the BTC 0.18→0.20 vertical slice.
+
+**Defer:** weight/notional (need FX/valuation), PostgreSQL phase D, Mac runtime test of OutputType=Exe.
 
 ---
 
 ## Phase D — After first demo (defer)
-
 - Weight/notional targets (AAPL 3%, Samsung KRW notional) only after FX/valuation/lot rules exist  
 - Hummingbot only if same target-position + recovery tests beat Nautilus for crypto-only product  
 - Direct `ExecutionIntent` behind stricter permissions  

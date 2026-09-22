@@ -42,6 +42,25 @@ public record SafetyStatus(
     string Message
 );
 
+public record BridgeCapabilities(
+    bool LiveTrading,
+    bool PaperTrading,
+    string Mode,
+    string ModeAuthority,
+    List<string>? TargetTypes = null,
+    List<BridgeAccountCapability>? Accounts = null
+);
+
+public record BridgeAccountCapability(
+    string AccountId,
+    string Name,
+    string Status,
+    bool SupportsOrders,
+    bool IsPaper,
+    bool LiveTrading,
+    string Mode
+);
+
 public record TargetProposalPlan(
     string InstrumentId,
     string Side,

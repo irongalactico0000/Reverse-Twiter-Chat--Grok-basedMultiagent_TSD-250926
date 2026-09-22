@@ -27,7 +27,12 @@
           </TextBlock>
         </Border>
         <Border Background="#1E293B" CornerRadius="3" Padding="6,2">
-          <TextBlock Text="live=false" FontSize="10" Foreground="#6B7280"/>
+          <TextBlock FontSize="10" Foreground="#6B7280">
+            <Run Text="live="/>
+            <Run Text="{Binding LiveTradingAllowed}"/>
+            <Run Text=" mode="/>
+            <Run Text="{Binding ModeLabel}"/>
+          </TextBlock>
         </Border>
       </StackPanel>
 
