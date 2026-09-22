@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TSD Chart</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #0F172A; color: #E5E7EB; font-family: Inter, system-ui, sans-serif; }
+    #toolbar { display: flex; gap: 12px; align-items: center; padding: 8px 12px; border-bottom: 1px solid #1F2937; font-size: 12px; }
+    #toolbar strong { color: #60A5FA; letter-spacing: 0.04em; }
+    #chart { height: calc(100% - 40px); }
+    .muted { color: #6B7280; }
+    .live { color: #86EFAC; }
+    .syn { color: #FDE68A; }
+  </style>
+  <script src="https://unpkg.com/lightweight-charts@4.2.0/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <div id="toolbar">
+    <strong>TSD</strong>
+    <span id="symbol">BTCUSDT</span>
+    <span id="mode" class="syn">SYNTHETIC</span>
+    <span class="muted" id="hint">served by FastAPI /static/chart.html — replace with DSM feed later</span>
+  </div>
+  <div id="chart"></div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const symbol = (params.get("symbol") || "BTCUSDT").toUpperCase();
+    document.getElementById("symbol").textContent = symbol;
+
+    const el = document.getElementById("chart");
+    const chart = LightweightCharts.createChart(el, {
+      layout: { background: { color: "#0F172A" }, textColor: "#9CA3AF" },
+      grid: { vertLines: { color: "#1F2937" }, horzLines: { color: "#1F2937" } },
+      rightPriceScale: { borderColor: "#1F2937" },
+      timeScale: { borderColor: "#1F2937" },
+      crosshair: { mode: 0 },
+    });
+    const series = chart.addCandlestickSeries({
+      upColor: "#22C55E", downColor: "#EF4444",
+      borderUpColor: "#22C55E", borderDownColor: "#EF4444",
+      wickUpColor: "#22C55E", wickDownColor: "#EF4444",
+    });
+
+    function seedBars(n) {
+      const out = [];
+      let t = Math.floor(Date.now() / 1000) - n * 60;
+      let px = symbol.includes("BTC") ? 50000 : 100;
+      for (let i = 0; i < n; i++) {
+        const o = px;
+        const c = px * (1 + (Math.random() - 0.5) * 0.004);
+        const h = Math.max(o, c) * (1 + Math.random() * 0.001);
+        const l = Math.min(o, c) * (1 - Math.random() * 0.001);
+        out.push({ time: t, open: o, high: h, low: l, close: c });
+        px = c; t += 60;
+      }
+      return out;
+    }
+
+    series.setData(seedBars(180));
+    chart.timeScale().fitContent();
+
+    const ro = new ResizeObserver(() => {
+      chart.applyOptions({ width: el.clientWidth, height: el.clientHeight });
+    });
+    ro.observe(el);
+
+    // Keep a gentle heartbeat candle so the pane never looks frozen.
+    setInterval(() => {
+      const now = Math.floor(Date.now() / 1000);
+      const bucket = now - (now % 60);
+      const base = symbol.includes("BTC") ? 50000 : 100;
+      const close = base + Math.random() * 40;
+      series.update({
+        time: bucket,
+        open: base,
+        high: Math.max(base, close) + 10,
+        low: Math.min(base, close) - 10,
+        close,
+      });
+    }, 15000);
+  </script>
+</body>
+</html>

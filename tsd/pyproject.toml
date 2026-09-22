@@ -15,4 +15,7 @@ dependencies = [
     "sortedcontainers~=2.4.0",
     "websocket-client~=1.8.0",
     "websockets~=13.1",
+    "alpaca-py>=0.34.0",
+    "ib-async>=2.0.0",
+    "python-dotenv>=1.0.0",
 ]

@@ -1,0 +1,37 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <!-- Dark palette matching the React UI -->
+  <Color x:Key="BgDeepColor">#0A0F1A</Color>
+  <Color x:Key="BgPanelColor">#111827</Color>
+  <Color x:Key="BgCardColor">#0F172A</Color>
+  <Color x:Key="BorderColor">#1F2937</Color>
+  <Color x:Key="BorderSubtleColor">#374151</Color>
+  <Color x:Key="TextPrimaryColor">#F3F4F6</Color>
+  <Color x:Key="TextSecondaryColor">#9CA3AF</Color>
+  <Color x:Key="TextMutedColor">#6B7280</Color>
+  <Color x:Key="AccentColor">#60A5FA</Color>
+  <Color x:Key="AccentDimColor">#1E3A5F</Color>
+  <Color x:Key="GreenColor">#22C55E</Color>
+  <Color x:Key="GreenDimColor">#14532D</Color>
+  <Color x:Key="GreenTextColor">#86EFAC</Color>
+  <Color x:Key="RedColor">#EF4444</Color>
+  <Color x:Key="RedDimColor">#450A0A</Color>
+  <Color x:Key="RedTextColor">#FCA5A5</Color>
+  <Color x:Key="AmberColor">#F59E0B</Color>
+  <Color x:Key="YellowTextColor">#FDE68A</Color>
+
+  <SolidColorBrush x:Key="BgDeep" Color="{StaticResource BgDeepColor}"/>
+  <SolidColorBrush x:Key="BgPanel" Color="{StaticResource BgPanelColor}"/>
+  <SolidColorBrush x:Key="BgCard" Color="{StaticResource BgCardColor}"/>
+  <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+  <SolidColorBrush x:Key="TextPrimary" Color="{StaticResource TextPrimaryColor}"/>
+  <SolidColorBrush x:Key="TextSecondary" Color="{StaticResource TextSecondaryColor}"/>
+  <SolidColorBrush x:Key="TextMuted" Color="{StaticResource TextMutedColor}"/>
+  <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+  <SolidColorBrush x:Key="GreenBrush" Color="{StaticResource GreenColor}"/>
+  <SolidColorBrush x:Key="GreenTextBrush" Color="{StaticResource GreenTextColor}"/>
+  <SolidColorBrush x:Key="RedBrush" Color="{StaticResource RedColor}"/>
+  <SolidColorBrush x:Key="RedTextBrush" Color="{StaticResource RedTextColor}"/>
+
+</ResourceDictionary>

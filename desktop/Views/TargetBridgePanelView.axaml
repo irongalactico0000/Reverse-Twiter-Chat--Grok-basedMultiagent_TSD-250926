@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TSD.Desktop.ViewModels"
+             x:Class="TSD.Desktop.Views.TargetBridgePanelView"
+             x:DataType="vm:TargetBridgePanelViewModel">
+
+  <Border Classes="Panel" BorderBrush="#1E293B">
+    <StackPanel Spacing="10">
+
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Grid.Column="0" Classes="SectionTitle" Text="PAPER TARGET BRIDGE"/>
+        <Button Grid.Column="1" Classes="Danger" Content="KILL" FontSize="11"
+                Command="{Binding KillSwitchCommand}"/>
+      </Grid>
+
+      <TextBlock Foreground="#94A3B8" FontSize="11" TextWrapping="Wrap">
+        Strategy expresses target positions. Approve runs risk → paper fill.
+        Live trading disabled.
+      </TextBlock>
+
+      <!-- Safety badge -->
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Border Background="#1E293B" CornerRadius="3" Padding="6,2">
+          <TextBlock FontSize="10" Foreground="#60A5FA">
+            <Run Text="mutations="/>
+            <Run Text="{Binding MutationsEnabled}"/>
+          </TextBlock>
+        </Border>
+        <Border Background="#1E293B" CornerRadius="3" Padding="6,2">
+          <TextBlock Text="live=false" FontSize="10" Foreground="#6B7280"/>
+        </Border>
+      </StackPanel>
+
+      <!-- Inputs -->
+      <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+        <StackPanel Grid.Column="0" Spacing="4">
+          <TextBlock Text="Instrument" Foreground="#6B7280" FontSize="11"/>
+          <TextBox Classes="Dark" Text="{Binding InstrumentId}" FontSize="12"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Spacing="4">
+          <TextBlock Text="Target qty" Foreground="#6B7280" FontSize="11"/>
+          <TextBox Classes="Dark" Text="{Binding TargetValue}" FontSize="12"/>
+        </StackPanel>
+      </Grid>
+      <StackPanel Spacing="4">
+        <TextBlock Text="Current qty" Foreground="#6B7280" FontSize="11"/>
+        <TextBox Classes="Dark" Text="{Binding CurrentQuantity}" FontSize="12"/>
+      </StackPanel>
+
+      <Button Classes="Primary" Content="Propose Target" HorizontalAlignment="Stretch"
+              Padding="0,8" Command="{Binding ProposeCommand}"
+              IsEnabled="{Binding MutationsEnabled}"/>
+
+      <TextBlock Text="{Binding StatusMessage}" Foreground="#9CA3AF" FontSize="11"
+                 IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+      <!-- Proposals list -->
+      <TextBlock Classes="SectionTitle" Text="Proposals" Margin="0,4,0,0"/>
+      <ItemsControl ItemsSource="{Binding Proposals}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Grid ColumnDefinitions="*,Auto" Margin="0,3,0,0">
+              <TextBlock Grid.Column="0" FontSize="11" Foreground="#CBD5E1">
+                <Run Text="{Binding Status}"/>
+                <Run Text=" "/>
+                <Run Text="{Binding Plan.Side}"/>
+                <Run Text=" "/>
+                <Run Text="{Binding Plan.Quantity}"/>
+                <Run Text=" → "/>
+                <Run Text="{Binding Plan.TargetQuantity}"/>
+              </TextBlock>
+              <Button Grid.Column="1" Classes="Ghost" Content="Approve" FontSize="11"
+                      Command="{Binding $parent[UserControl].DataContext.ApproveCommand}"
+                      CommandParameter="{Binding ProposalId}"
+                      IsEnabled="{Binding $parent[UserControl].DataContext.MutationsEnabled}"/>
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <!-- Bridge positions -->
+      <TextBlock Classes="SectionTitle" Text="Paper Positions" Margin="0,4,0,0"/>
+      <ItemsControl ItemsSource="{Binding Positions}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <TextBlock FontSize="11" Foreground="#CBD5E1" Margin="0,2,0,0">
+              <Run Text="{Binding InstrumentId}"/>
+              <Run Text=": "/>
+              <Run Text="{Binding Quantity}"/>
+            </TextBlock>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <!-- Recent events -->
+      <TextBlock Classes="SectionTitle" Text="Recent Events" Margin="0,4,0,0"/>
+      <ItemsControl ItemsSource="{Binding Events}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <TextBlock Text="{Binding EventType}" FontSize="11" Foreground="#94A3B8" Margin="0,2,0,0"/>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+    </StackPanel>
+  </Border>
+
+</UserControl>

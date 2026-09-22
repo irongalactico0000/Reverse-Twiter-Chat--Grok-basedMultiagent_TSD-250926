@@ -1,0 +1,10 @@
+flowchart LR
+  N[NautilusTrader\nprimary candidate]
+  H[Hummingbot API\ncrypto-focused alternative]
+  SPIKE[Version-pinned compatibility spike\nBTC target -> derived order -> fill -> P&L -> restart]
+  DECIDE[Select one execution authority\nNo parallel OMS]
+  TSD[TSD owns strategy builder\nagent workflows\ndeployments\nReact workbench]
+  N --> SPIKE
+  H --> SPIKE
+  SPIKE --> DECIDE
+  DECIDE --> TSD

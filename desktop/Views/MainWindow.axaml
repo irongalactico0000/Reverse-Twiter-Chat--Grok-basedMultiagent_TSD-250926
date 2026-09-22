@@ -1,0 +1,62 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:TSD.Desktop.ViewModels"
+        xmlns:v="using:TSD.Desktop.Views"
+        x:Class="TSD.Desktop.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="TSD — Trading Operating System"
+        Width="1440" Height="900"
+        MinWidth="1100" MinHeight="700"
+        Background="#0A0F1A">
+
+  <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+    <!-- Top bar -->
+    <Border Grid.Row="0" Background="#111827" BorderBrush="#1F2937" BorderThickness="0,0,0,1" Padding="20,10">
+      <StackPanel Orientation="Horizontal" Spacing="20">
+        <TextBlock Text="TSD" Foreground="#60A5FA" FontSize="16" FontWeight="Black"
+                   LetterSpacing="1" VerticalAlignment="Center"/>
+        <TextBlock Text="Workflow" Foreground="#6B7280" FontSize="13" VerticalAlignment="Center"
+                   Cursor="Hand"/>
+        <TextBlock Text="Trading" Foreground="#E5E7EB" FontSize="13" VerticalAlignment="Center"
+                   FontWeight="SemiBold"/>
+        <Rectangle Width="1" Fill="#1F2937" Margin="4,0"/>
+        <TextBlock Text="{Binding BrokerStatus.ErrorMessage}" Foreground="#EF4444" FontSize="12"
+                   VerticalAlignment="Center"
+                   IsVisible="{Binding BrokerStatus.ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+      </StackPanel>
+    </Border>
+
+    <!-- Prototype banner -->
+    <Border Grid.Row="1" Background="#1E293B" BorderBrush="#334155" BorderThickness="0,0,0,1" Padding="20,6">
+      <TextBlock Foreground="#FDE68A" FontSize="12">
+        Prototype workbench — paper bridge authoritative for demo fills. Live trading disabled.
+      </TextBlock>
+    </Border>
+
+    <!-- Broker status bar -->
+    <Border Grid.Row="2" BorderBrush="#1F2937" BorderThickness="0,0,0,1" Padding="20,12">
+      <v:BrokerStatusView DataContext="{Binding BrokerStatus}"/>
+    </Border>
+
+    <!-- Main 3-column grid -->
+    <Grid Grid.Row="3" ColumnDefinitions="300,*,340" ColumnSpacing="12" Margin="20,12">
+
+      <!-- Left: catalog + bridge -->
+      <ScrollViewer Grid.Column="0">
+        <StackPanel Spacing="12">
+          <v:StrategyCatalogView DataContext="{Binding StrategyCatalog}"/>
+          <v:TargetBridgePanelView DataContext="{Binding TargetBridge}"/>
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- Center: chart -->
+      <v:TradingChartView Grid.Column="1" DataContext="{Binding TradingChart}"/>
+
+      <!-- Right: execution console -->
+      <v:ExecutionConsoleView Grid.Column="2" DataContext="{Binding ExecutionConsole}"/>
+
+    </Grid>
+
+  </Grid>
+</Window>

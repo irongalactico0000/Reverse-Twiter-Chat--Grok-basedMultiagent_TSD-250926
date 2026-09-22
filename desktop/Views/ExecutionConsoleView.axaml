@@ -1,0 +1,130 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TSD.Desktop.ViewModels"
+             x:Class="TSD.Desktop.Views.ExecutionConsoleView"
+             x:DataType="vm:ExecutionConsoleViewModel">
+
+  <ScrollViewer>
+    <StackPanel Spacing="12">
+
+      <!-- Order Entry -->
+      <Border Classes="Panel">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="SectionTitle" Text="Order Entry"/>
+
+          <!-- Paper / Live toggle -->
+          <StackPanel Orientation="Horizontal" Spacing="4">
+            <Button Content="PAPER" Classes="Primary" FontSize="11" Padding="8,3"/>
+            <Button Content="LIVE" Background="#7F1D1D" Foreground="#FCA5A5"
+                    BorderBrush="#EF4444" BorderThickness="1"
+                    CornerRadius="4" Padding="8,3" FontSize="11" FontWeight="Bold" Cursor="Hand"
+                    Command="{Binding ToggleSideCommand}"/>
+          </StackPanel>
+
+          <!-- BUY / SELL -->
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+            <Button Grid.Column="0" Content="BUY" FontWeight="Bold"
+                    Background="#14532D" Foreground="#86EFAC"
+                    BorderBrush="#166534" BorderThickness="1"
+                    CornerRadius="4" HorizontalAlignment="Stretch" Padding="0,8"
+                    Command="{Binding ToggleSideCommand}" CommandParameter="BUY"/>
+            <Button Grid.Column="1" Content="SELL" FontWeight="Bold"
+                    Background="#450A0A" Foreground="#FCA5A5"
+                    BorderBrush="#7F1D1D" BorderThickness="1"
+                    CornerRadius="4" HorizontalAlignment="Stretch" Padding="0,8"
+                    Command="{Binding ToggleSideCommand}" CommandParameter="SELL"/>
+          </Grid>
+
+          <!-- Symbol + Order type -->
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+            <StackPanel Grid.Column="0" Spacing="4">
+              <TextBlock Text="Symbol" Foreground="#6B7280" FontSize="11"/>
+              <TextBox Classes="Dark" Text="{Binding Symbol}" PlaceholderText="AAPL"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4">
+              <TextBlock Text="Order Type" Foreground="#6B7280" FontSize="11"/>
+              <ComboBox Classes="Dark" SelectedItem="{Binding SelectedOrderType}"
+                        HorizontalAlignment="Stretch">
+                <ComboBoxItem>MARKET</ComboBoxItem>
+                <ComboBoxItem>LIMIT</ComboBoxItem>
+              </ComboBox>
+            </StackPanel>
+          </Grid>
+
+          <!-- Quantity + Limit price -->
+          <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+            <StackPanel Grid.Column="0" Spacing="4">
+              <TextBlock Text="Quantity" Foreground="#6B7280" FontSize="11"/>
+              <TextBox Classes="Dark" Text="{Binding Quantity}" PlaceholderText="1"/>
+            </StackPanel>
+            <StackPanel Grid.Column="1" Spacing="4" IsVisible="{Binding IsLimitOrder}">
+              <TextBlock Text="Limit Price" Foreground="#6B7280" FontSize="11"/>
+              <TextBox Classes="Dark" Text="{Binding LimitPrice}" PlaceholderText="0.00"/>
+            </StackPanel>
+          </Grid>
+
+          <Button Classes="Primary" Content="Send Order" HorizontalAlignment="Stretch"
+                  Padding="0,10" Command="{Binding PlaceOrderCommand}"/>
+
+          <TextBlock Text="{Binding StatusMessage}" Foreground="#9CA3AF" FontSize="12"
+                     IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Positions -->
+      <Border Classes="Panel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="SectionTitle" Text="Positions"/>
+          <Grid ColumnDefinitions="2*,*,*,*" Margin="0,0,0,4">
+            <TextBlock Grid.Column="0" Text="Symbol" Foreground="#6B7280" FontSize="11"/>
+            <TextBlock Grid.Column="1" Text="Qty" Foreground="#6B7280" FontSize="11"/>
+            <TextBlock Grid.Column="2" Text="Avg" Foreground="#6B7280" FontSize="11"/>
+            <TextBlock Grid.Column="3" Text="P&amp;L" Foreground="#6B7280" FontSize="11"/>
+          </Grid>
+          <ItemsControl ItemsSource="{Binding Positions}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="2*,*,*,*" Margin="0,3,0,0">
+                  <TextBlock Grid.Column="0" Text="{Binding Symbol}" Foreground="#F3F4F6" FontWeight="SemiBold" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding Qty}" Foreground="#D1D5DB" FontSize="12"/>
+                  <TextBlock Grid.Column="2" Text="{Binding AvgEntryPrice, StringFormat=\${0:F2}}" Foreground="#D1D5DB" FontSize="12"/>
+                  <TextBlock Grid.Column="3" Text="{Binding UnrealizedPl, StringFormat=\${0:F2}}" FontSize="12"
+                             Foreground="#86EFAC"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="No open positions" Foreground="#4B5563" FontSize="12"
+                     IsVisible="{Binding !Positions.Count}"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Open Orders -->
+      <Border Classes="Panel">
+        <StackPanel Spacing="8">
+          <TextBlock Classes="SectionTitle" Text="Open Orders"/>
+          <ItemsControl ItemsSource="{Binding Orders}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="2*,*,*,*,Auto" Margin="0,3,0,0">
+                  <TextBlock Grid.Column="0" Text="{Binding Symbol}" Foreground="#F3F4F6" FontWeight="SemiBold" FontSize="12"/>
+                  <TextBlock Grid.Column="1" Text="{Binding Side}" FontSize="12" Foreground="#86EFAC"/>
+                  <TextBlock Grid.Column="2" Text="{Binding Qty}" Foreground="#D1D5DB" FontSize="12"/>
+                  <TextBlock Grid.Column="3" Text="{Binding Status}" Foreground="#9CA3AF" FontSize="12"/>
+                  <Button Grid.Column="4" Content="Cancel" Foreground="#F87171"
+                          Background="Transparent" BorderThickness="0" FontSize="11" Cursor="Hand"
+                          Command="{Binding $parent[UserControl].DataContext.CancelOrderCommand}"
+                          CommandParameter="{Binding}"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <TextBlock Text="No open orders" Foreground="#4B5563" FontSize="12"
+                     IsVisible="{Binding !Orders.Count}"/>
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+
+</UserControl>

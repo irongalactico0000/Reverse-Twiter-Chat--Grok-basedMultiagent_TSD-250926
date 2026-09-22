@@ -1,0 +1,16 @@
+sequenceDiagram
+  participant A as Agent
+  participant T as TSD Tool Gateway
+  participant H as Human/Policy Approval
+  participant R as Risk Layer
+  participant E as Engine OMS/EMS
+  participant U as UI/Audit
+  A->>T: propose_target_position
+  T->>T: Validate scope, expiry, budget, evidence
+  T-->>U: Proposal with rationale and correlation ID
+  H->>T: Approve or reject proposal
+  T->>R: Re-run risk on approved target
+  R-->>T: Decision
+  T->>E: Submit approved target only
+  E-->>U: Derived orders/fills/positions
+  T-->>U: Prompt, evidence, approval, decision, outcome audit chain

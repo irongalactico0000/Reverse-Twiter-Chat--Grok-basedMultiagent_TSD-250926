@@ -1,9 +1,10 @@
 # TSD-cpp251006
 
-<<<<<<< HEAD
 # Trading System Domain (TSD) Integration Guide
 
 This README captures the code-facing work required to connect the existing Trading System Domain (TSD) stack with the multi-agent orchestration service so the combined system can function as an agent-assisted AI trader.
+
+> **2026-09-22 note:** Merge conflict markers were removed from this file. Authoritative trading-OS direction is now in `docs/trading-os-engineering-plan.md` and `docs/NEXT_AGENT_TODO.md`. Prefer target-position intents + an adopted engine (Nautilus spike) over expanding direct OSM order routes.
 
 ## 1. Grounding: What Already Works
 - **Market plumbing (DSM)**: WebSocket/ZMQ publishers and parsing utilities provide real-time order book streaming primitives (`tsd/dsm`).
@@ -24,38 +25,26 @@ This README captures the code-facing work required to connect the existing Tradi
    - Audit each order manager constructor (`tsd/osm/managers/*.py`) to ensure consistent parameter order and error handling.
 
 2. **Expose TSD primitives as agent tools**
-   - Implement a thin service in `backend/back-end/node` (or a new `backend/back-end/trading_tools`) that:
-     - Wraps DSM data access (e.g., `get_order_book`, `stream_quotes`).
-     - Invokes OSM order managers through a safe execution facade (position/risk checks before order dispatch).
-     - Returns structured payloads ready for Gemini function calls.
-   - Register these functions with the host agent via tool definitions so the agent can plan → execute trading actions.
+   - Prefer a **proposal / target-position** facade (not raw `send_order`) for agents.
+   - Long-term: bridge to the adopted trading engine; keep broker credentials inside the trading runtime.
 
 3. **Stand up persistence/knowledge store**
    - Choose TimescaleDB/Influx (matching existing docs) and add a recorder in `tsd/dsm/recorder` to persist normalized order books/trades/news.
-   - Provide query utilities (e.g., SQL helpers or ORM) that agents can call to fetch historical context.
+   - Provide query utilities that agents can call to fetch historical context.
 
 4. **Implement the agentic intelligence crawler**
-   - Create an ingestion worker (`agentic_crawler` service) that scrapes APIs/RSS/social feeds, enriches the data, and stores it alongside market data.
-   - Publish summaries or embeddings the multi-agent backend can read (consider a vector store if semantic retrieval is needed).
+   - Create an ingestion worker that scrapes APIs/RSS/social feeds, enriches the data, and stores it alongside market data.
 
 5. **Develop the Trading Strategy Manager (TSM)**
-   - Prototype baseline strategies (e.g., mean reversion, momentum) inside `tsd/tsm/training` or a new `tsd/tsm/strategies` package.
-   - Define interfaces for signal generation, backtesting, and live deployment; surface status/results through agent tools.
+   - Executable strategy versions that emit `TargetPositionIntent`; do not treat `tsd/tsm/training` as production runtime.
 
 6. **Refactor agent prompts & orchestration for trading**
-   - Replace the CAE-focused prompt instructions with trading roles (market analyst, risk manager, execution agent).
-   - Keep the host-agent hierarchy but ensure outputs map to the new toolset and enforce risk guardrails in responses.
+   - Trading roles (market analyst, risk manager, execution agent) with approval gates before paper/live.
 
 7. **Testing & validation**
-   - Add integration tests covering order submission flows using sandbox endpoints (mock HTTP via `httpx.MockTransport`).
-   - Write unit tests for new tool wrappers and config helpers to prevent regression when switching to local LLMs later.
+   - Sandbox/paper tests only in CI; never real order submission in CI.
 
 ## 4. Future Considerations
-- **Local LLM support**: Abstract the agent runner so Gemini can be swapped for a local model with minimal code changes (e.g., dependency inversion for the `Runner`).
-- **Observability**: Instrument DSM/OSM with metrics (Prometheus/OpenTelemetry) to monitor latency and agent decision loops.
-- **Risk & compliance**: Plan for position limits, PnL tracking, and audit trails before enabling live trading.
+- **Local LLM support**, observability, and risk/compliance before any live trading.
 
-Use this plan as the authoritative checklist when implementing the AI trader integration.
-=======
-# TSD-cpp251006
->>>>>>> tsdcppremote
+Use `docs/NEXT_AGENT_TODO.md` as the executable checklist for the current spike.

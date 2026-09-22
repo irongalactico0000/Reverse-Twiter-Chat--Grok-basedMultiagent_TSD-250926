@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.77.2",
+    "lightweight-charts": "^4.2.0",
     "@tanstack/react-query-devtools": "^5.74.4",
     "@vitejs/plugin-basic-ssl": "^2.0.0",
     "@xyflow/react": "^12.8.5",

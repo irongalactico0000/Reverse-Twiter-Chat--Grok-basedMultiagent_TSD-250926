@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:TSD.Desktop.ViewModels"
+             xmlns:webview="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls.WebView"
+             x:Class="TSD.Desktop.Views.TradingChartView"
+             x:DataType="vm:TradingChartViewModel">
+
+  <Border Classes="Panel">
+    <Grid RowDefinitions="Auto,*">
+
+      <!-- Symbol bar -->
+      <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="0,0,0,10">
+        <TextBox Classes="Dark" Text="{Binding Symbol}" Width="90" FontWeight="Bold" FontSize="14"/>
+        <TextBlock Text="{Binding PriceDisplay}" Foreground="#F3F4F6" FontSize="22" FontWeight="Bold"
+                   VerticalAlignment="Center"/>
+        <TextBlock Text="{Binding ChangeDisplay}" Foreground="#86EFAC" FontSize="13" FontWeight="SemiBold"
+                   VerticalAlignment="Center"/>
+      </StackPanel>
+
+      <!-- Hosts lightweight-charts from FastAPI GET /static/chart.html -->
+      <webview:NativeWebView Grid.Row="1" MinHeight="320"
+                             Source="{Binding ChartUrl}"
+                             Background="#0F172A"/>
+
+    </Grid>
+  </Border>
+
+</UserControl>

@@ -1,0 +1,298 @@
+document:
+  title: Autonomous Trading Operating System Engineering Plan
+  short_title: TSD Trading OS Plan
+  version: "0.1"
+  date: "2026-09-22"
+  status: proposed
+  owner: TSD Engineering
+  repository: Multiagent_TSD-250926
+  safety_status: live_trading_disabled_until_gates_pass
+  primary_decision: Adopt and configure a mature event-driven trading engine; TSD owns strategy, agent, workflow, deployment, bridge, and operator experience.
+  target_position_decision: Normal strategies emit target quantity, weight, or notional. OMS/EMS derives orders. Direct execution intents are restricted to specialized execution strategies and still pass through risk and the adopted engine.
+engine_evaluation:
+  primary_candidate: NautilusTrader
+  alternative_candidate: Hummingbot API
+  selection_rule: Choose from a pinned-version compatibility spike, not feature-list comparison.
+  required_demo:
+    - market_data_to_target_position
+    - target_to_oms_delta
+    - oms_to_paper_order
+    - fill_to_position_pnl
+    - restart_recovery
+    - duplicate_target_update
+    - partial_fill
+    - reversal
+    - cancellation
+    - risk_rejection
+    - strategy_attribution
+safety_invariants:
+  - Strategies cannot access broker SDKs or credentials.
+  - Normal alpha strategies emit target positions, not broker orders.
+  - Direct execution strategies use a typed restricted ExecutionIntent and still pass risk and engine boundaries.
+  - Frontend Paper/Live state is never authoritative.
+  - Live trading is disabled by default and requires server-side capability, approval, audit, and operational gates.
+  - Money and quantity values use Decimal-safe representations at boundaries.
+  - Event consumers are idempotent; delivery is at least once.
+  - Engine/broker reconciliation is observable and fail-closed.
+state_ownership:
+  users_permissions_proposals_approvals: TSD application database
+  strategy_versions_and_deployments: TSD application database
+  order_lifecycle_fills_positions: Adopted engine runtime and configured recovery
+  trading_pnl_and_accounting: Adopted engine accounting and portfolio
+  external_orders_executions_balances: Broker evidence reconciled into engine
+  browser_views: Read-only projections
+  research_and_agent_explanations: TSD research/agent records
+first_five_deliverables:
+  - id: D1
+    name: Contained baseline
+    evidence: Prototype recoverable; unauthorized requests cannot trade
+  - id: D2
+    name: Pinned engine integration
+    evidence: One strategy runs in backtest and local paper on one instrument/data source
+  - id: D3
+    name: TSD trading bridge
+    evidence: Authenticated request yields engine order and traceable outcome
+  - id: D4
+    name: Existing UI connected
+    evidence: React displays engine orders/fills/positions/PnL/status without pretending synthetic data is real
+  - id: D5
+    name: Recovery and agent demonstration
+    evidence: Approved scoped proposal executes in paper and survives restart/retry without duplication
+specific_next_actions:
+  containment:
+    - Capture git status, diff, and untracked inventory
+    - Inspect trading files for secrets before staging
+    - Revoke/rotate exposed credentials
+    - Replace constant-token auth and wildcard CORS or disable mutations
+    - Add secret scanning and classify prototype work
+  engine_spike:
+    - Pin exact NautilusTrader release and matching docs
+    - Run official example unchanged
+    - Run one local paper strategy
+    - Adapt TargetPositionIntent
+    - Prove BTCUSDT target 0.20 from current 0.18
+    - Test backtest/paper parity, partial fill, reversal, duplicate target, cancel race, stale data, risk rejection
+  bridge_and_ui:
+    - Persist TSD command to deployment to engine client order identity
+    - Map engine events to TSD read models
+    - Connect current React trading page to real engine data
+    - Add scoped propose_target tool and approval timeline
+    - Restart after submit and prove no duplicate order
+phases:
+  - id: P0
+    name: Containment and baseline
+    effort: 1-2 team-weeks
+    depends_on: []
+    deliverables:
+      - credential rotation and secret scanning
+      - prototype classification and preservation
+      - authentication and CORS hardening
+      - live mutation fail-closed behavior
+      - dependency and lockfile baseline
+      - minimal CI
+    acceptance:
+      - anonymous callers cannot mutate trading state
+      - exposed credentials are revoked and not present in active source
+      - prototype baseline is preserved separately
+      - clean install, lint, and typecheck procedure exists
+  - id: P1
+    name: Engine compatibility spike and ADRs
+    effort: 1-2 team-weeks
+    depends_on: [P0]
+    deliverables:
+      - pinned NautilusTrader evaluation
+      - Hummingbot API comparison
+      - target-position adapter
+      - quantity, weight, and notional paper examples
+      - engine/storage/bus/boundary ADRs
+    acceptance:
+      - selected engine passes the full paper vertical slice
+      - target-position semantics and open-order policy are documented
+      - no unneeded custom OMS/paper engine work is scheduled
+  - id: P2
+    name: Canonical contracts and TSD bridge
+    effort: 2-3 team-weeks
+    depends_on: [P1]
+    deliverables:
+      - versioned domain schemas
+      - generated frontend types
+      - target/weight/notional normalization
+      - engine event bridge
+      - strategy registry and deployment records
+    acceptance:
+      - UI displays engine orders, fills, positions, PnL, and target provenance
+      - all mutations have identity, version, timestamp, and correlation fields
+  - id: P3
+    name: Safety facade and paper vertical slice
+    effort: 2-4 team-weeks
+    depends_on: [P2]
+    deliverables:
+      - permissions and idempotency
+      - risk overlays and reservations where missing
+      - approvals and kill switches
+      - deterministic paper/replay tests
+      - restricted direct execution intent
+    acceptance:
+      - target to derived order to fill to PnL survives retry, stale data, partial fill, and cancellation
+      - direct broker calls from routes/strategies are absent
+      - kill switches fail closed
+  - id: P4
+    name: DSM and real market-data integration
+    effort: 3-5 team-weeks
+    depends_on: [P2, P3]
+    deliverables:
+      - engine feed adapter configuration
+      - TSD feed bridge only where needed
+      - snapshot/delta validation and recovery
+      - recording/replay
+      - authenticated browser stream
+    acceptance:
+      - no synthetic trading data in production workbench
+      - gaps invalidate and recover the book visibly
+  - id: P5
+    name: Strategy builder, backtest, and promotion
+    effort: 4-6 team-weeks
+    depends_on: [P1, P2, P3, P4]
+    deliverables:
+      - immutable strategy versions
+      - backtest jobs and manifests
+      - no-look-ahead and walk-forward checks
+      - paper soak and sandbox/resource limits
+      - deployment lifecycle
+    acceptance:
+      - same strategy version runs in backtest and paper
+      - outputs are reproducible and fully attributed
+      - failed strategies cannot emit new intents
+  - id: P6
+    name: DaxAlgo-inspired React workbench
+    effort: 3-4 team-weeks
+    depends_on: [P2, P4]
+    deliverables:
+      - broker/data status
+      - execution console
+      - strategy catalog
+      - real chart/order book/tape
+      - portfolio/risk/audit panels
+      - server-authoritative mode and reconnect state
+    acceptance:
+      - accepted/rejected/partial/filled/canceled/stale/disconnected/paused/kill-switch states are visible and tested
+      - random/synthetic production data is removed
+  - id: P7
+    name: Bounded autonomy
+    effort: 2-3 team-weeks
+    depends_on: [P3, P5, P6]
+    deliverables:
+      - read-only and proposal agent tools
+      - approval thresholds
+      - budgets and allowlists
+      - end-to-end agent evidence correlation
+    acceptance:
+      - agents cannot bypass target, risk, engine, or audit boundaries
+      - proposal is distinct from order
+  - id: P8
+    name: External paper and live certification
+    effort: 3-6 team-weeks per adapter plus soak
+    depends_on: [P3, P4, P5, P6, P7]
+    deliverables:
+      - one venue certification at a time
+      - paper soak and reconciliation drills
+      - kill-switch and recovery drills
+      - low-limit canary procedure
+    acceptance:
+      - security, correctness, operations, and product owners sign live gate
+      - cTrader remains disabled until complete protocol/lifecycle tests pass
+contracts:
+  target_position:
+    target_types: [quantity, weight, notional]
+    required_fields: [strategy_id, strategy_version, account_scope, instrument_id, target_type, target_value, effective_at, valid_until, reason, signal_id, policy_version, correlation_id]
+  special_execution:
+    type: ExecutionIntent
+    allowed_for: [vwap, twap, iceberg, market_making, hedging, spread, latency_sensitive]
+    still_requires: [authorization, risk_check, engine_submission, audit]
+  event_delivery: at_least_once
+  numeric_policy: Decimal-safe strings at API/event boundary and NUMERIC/engine exact values internally
+  time_policy: UTC RFC3339
+  id_policy: UUID internal IDs, broker client IDs at adapter boundary
+live_gates:
+  security:
+    - maintained identity provider
+    - MFA
+    - account-scoped roles
+    - secret manager
+    - credential rotation
+    - authenticated browser streams
+    - rate limits and audit
+  correctness:
+    - idempotency
+    - explicit lifecycle
+    - target-to-order verification
+    - balanced accounting or engine equivalent
+    - reconciliation
+    - stale-feed and price-collar checks
+  operations:
+    - global/account/strategy/instrument kill switches
+    - cancel-all and flatten runbooks
+    - backup/restore and incident drills
+    - feed/order/strategy/reconciliation alerts
+    - paper soak
+  promotion:
+    - two-person approval
+    - low-limit canary
+    - external review of broker/data/legal assumptions
+risks:
+  - id: R1
+    severity: critical
+    title: Committed or historical credentials
+    mitigation: Revoke first, sanitize source/history, add secret scanning.
+  - id: R2
+    severity: critical
+    title: Direct route-to-broker architecture
+    mitigation: Adopt engine authority and target-position bridge; no raw adapter calls from API/strategies.
+  - id: R3
+    severity: high
+    title: Engine version/API drift
+    mitigation: Pin version and run compatibility suite in CI.
+  - id: R4
+    severity: high
+    title: Cosmetic Paper/Live toggle
+    mitigation: Server-authoritative account capabilities and fail-closed live gate.
+  - id: R5
+    severity: high
+    title: Two parallel OMS implementations
+    mitigation: Deprecate legacy OSM/current duplicate path after engine selection.
+  - id: R6
+    severity: high
+    title: Weight/notional conversion ambiguity
+    mitigation: Explicit currency, FX timestamp/source, valuation, rounding, and residual rules.
+  - id: R7
+    severity: high
+    title: Agent bypass or prompt injection
+    mitigation: Proposal-only tools, scoped identity, expiry, budgets, and repeated server-side risk.
+  - id: R8
+    severity: medium
+    title: cTrader incomplete support
+    mitigation: Treat it as unavailable until protocol and lifecycle certification.
+required_diagrams:
+  - current-state-repository.mmd
+  - target-architecture.mmd
+  - target-to-order-sequence.mmd
+  - agent-proposal-sequence.mmd
+  - order-state-machine.mmd
+  - strategy-promotion-state-machine.mmd
+  - engine-evaluation.mmd
+references:
+  local:
+    - DaxAlgo-Terminal/sdk/ai-context/daxalgo-strategy-context.md
+    - DaxAlgo-Terminal/sdk/ai-context/skills/risk-and-exits.md
+    - DaxAlgo-Terminal/src/windows/Execution/TradingTerminal.Execution/TradeIntent.cs
+    - DaxAlgo-Terminal/src/windows/Execution/TradingTerminal.Execution/RiskEngine.cs
+    - DaxAlgo-Terminal/src/windows/Execution/TradingTerminal.Execution/Oms/OrderDomain.cs
+  external:
+    - https://nautilustrader.io/docs/latest/concepts/architecture/
+    - https://nautilustrader.io/docs/latest/concepts/strategies/
+    - https://nautilustrader.io/docs/latest/integrations/
+    - https://github.com/nautechsystems/nautilus_trader
+    - https://hummingbot.org/hummingbot-api/
+    - https://hummingbot.org/hummingbot-api/routers/
+    - https://github.com/hummingbot/hummingbot-api
+    - https://github.com/hummingbot/dashboard

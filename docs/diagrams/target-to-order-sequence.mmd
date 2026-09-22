@@ -1,0 +1,20 @@
+sequenceDiagram
+  participant S as Strategy
+  participant B as TSD Bridge
+  participant P as Portfolio/Allocator
+  participant R as Risk Policy
+  participant O as Adopted OMS/EMS
+  participant E as Execution Engine
+  participant X as Broker/Paper Venue
+  participant U as TSD UI
+  S->>B: TargetPositionIntent(BTCUSDT=0.20)
+  B->>P: Read position/open orders/valuation
+  P-->>B: Current 0.18, delta +0.02
+  B->>R: Preview target and constraints
+  R-->>B: Approved / modified / rejected
+  B->>O: Approved target + policy version
+  O->>E: Derived BUY 0.02 MARKET plan
+  E->>X: Submit paper/live order
+  X-->>E: Ack / partial fill / fill
+  E-->>B: Order, fill, position, P&L events
+  B-->>U: Correlated lifecycle timeline

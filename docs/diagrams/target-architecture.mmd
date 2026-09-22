@@ -1,0 +1,25 @@
+flowchart TB
+  UI[TSD React workbench\nchat/catalog/chart/book/execution/portfolio]
+  CTRL[Authenticated TSD control API\nregistry/deployments/approvals/read models]
+  AG[Research/strategy/risk/portfolio agents\nread + proposal tools]
+  BRIDGE[Target-position and engine event bridge]
+  ENGINE[Adopted trading engine\nstrategy runtime | OMS/EMS | risk | portfolio | backtest | sandbox]
+  POLICY[TSD policy/audit layer\npermissions | allocation | approvals | kill switch]
+  DATA[Engine data adapters + TSD DSM where needed]
+  BROKER[Binance | Bybit | Interactive Brokers | Alpaca\ncTrader only after certification]
+  STORE[(PostgreSQL/TimescaleDB\nregistry/audit/read models)]
+  ARCH[(Parquet/object storage\nmarket datasets/replay)]
+  BUS[(Durable event bus)]
+  UI --> CTRL
+  CTRL --> BRIDGE
+  CTRL --> AG
+  AG --> POLICY
+  POLICY --> BRIDGE
+  BRIDGE --> ENGINE
+  DATA --> ENGINE
+  ENGINE --> BROKER
+  ENGINE --> BUS
+  ENGINE --> STORE
+  CTRL --> STORE
+  DATA --> ARCH
+  BUS --> CTRL

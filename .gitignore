@@ -1,0 +1,47 @@
+# Root ignore for Multiagent_TSD — secrets and local env must never be committed.
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Credentials / keys
+*.pem
+*.key
+!*public*.key
+credentials.json
+**/secrets/
+**/*secret*.local.*
+
+# Python / Node local
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# .NET build outputs
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# Local trading spike artifacts
+docs/spikes/**/.venv/
+docs/spikes/.cache/
+docs/spikes/**/artifacts/
+docs/spikes/**/test_data/
+docs/spikes/**/*.log
+**/nautilus_trader.egg-info/
+**/trading_bridge/last_run.jsonl
+**/tsd-trading-bridge/
+

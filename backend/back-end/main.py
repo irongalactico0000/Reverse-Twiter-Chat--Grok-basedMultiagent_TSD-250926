@@ -1,16 +1,26 @@
 import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .conversation.api import router as conversation_router
 from .node.entry_point.api import router as node_router
 from .auth.api import router as auth_router
+from .trading.api import router as trading_router
+from .trading_bridge.api import router as bridge_router
 
 
 
 api_description = """
 # 통합 에이전트 API
 CAE 과정 자동화를 위한 멀티 에이전트 시스템 및 플랫폼을 위한 API 문서입니다.
+
+## Trading (prototype)
+`/api/v1/trading/*` is a **prototype**. Mutations are fail-closed unless
+`TRADING_MUTATIONS_ENABLED=true` and `Authorization: Bearer <TRADING_API_TOKEN>`.
+Live trading is disabled until the gates in `docs/trading-os-engineering-plan.md` pass.
 """
 
 
@@ -52,6 +62,20 @@ AI 응답은 비동기적으로 처리되므로, 아래의 **폴링(Polling) 워
         "name": "Auth",
         "description": "Auth API",
     },
+    {
+        "name": "Trading (prototype)",
+        "description": (
+            "Prototype broker status/orders surface. Fail-closed mutations. "
+            "Not production-ready; not live-trading authorization."
+        ),
+    },
+    {
+        "name": "Trading Bridge (paper)",
+        "description": (
+            "Target-position propose/approve/paper-execute facade with idempotent command IDs. "
+            "Does not place live broker orders."
+        ),
+    },
 ]
 
 
@@ -63,13 +87,25 @@ app = FastAPI(
 )
 
 
-origins = ["*"]
+def _cors_origins() -> list[str]:
+    """CORS allowlist. Wildcard is opt-in via CORS_ALLOW_ORIGINS=* for local demos only."""
+    raw = os.getenv(
+        "CORS_ALLOW_ORIGINS",
+        "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000",
+    ).strip()
+    if raw == "*":
+        return ["*"]
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
 
+
+origins = _cors_origins()
+# Credentials + wildcard is unsafe and rejected by browsers; disable credentials for *.
+_allow_credentials = origins != ["*"]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -78,6 +114,13 @@ app.add_middleware(
 app.include_router(conversation_router)
 app.include_router(node_router)
 app.include_router(auth_router)
+app.include_router(trading_router)
+app.include_router(bridge_router)
+
+# NativeWebView / browser chart host — GET /static/chart.html
+_static_dir = Path(__file__).resolve().parent / "static"
+_static_dir.mkdir(exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(_static_dir)), name="static")
 
 
 @app.get("/", include_in_schema=False)

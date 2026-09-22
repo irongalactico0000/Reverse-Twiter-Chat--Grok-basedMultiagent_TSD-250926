@@ -1,0 +1,17 @@
+flowchart LR
+  FE[React/Vite CAE + trading prototype]
+  API[FastAPI CAE + direct broker routes]
+  AG[CAE agents]
+  DSM[tsd/dsm Coinbase WebSocket/ZMQ prototype]
+  OSM[tsd/osm legacy exchange managers]
+  TSM[tsd/tsm CSP training examples]
+  BROKERS[(Broker/exchange APIs)]
+  MEM[(Process-local state)]
+  FE --> API
+  API --> AG
+  API --> BROKERS
+  DSM --> OSM
+  DSM --> MEM
+  TSM -. training only .-> DSM
+  OSM --> BROKERS
+  FE -. synthetic trading data .-> FE

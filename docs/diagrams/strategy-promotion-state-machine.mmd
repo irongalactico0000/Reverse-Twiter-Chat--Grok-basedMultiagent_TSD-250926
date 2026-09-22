@@ -1,0 +1,15 @@
+stateDiagram-v2
+  [*] --> Draft
+  Draft --> Validated
+  Validated --> Backtested
+  Backtested --> PaperDeployed
+  PaperDeployed --> PaperSoakApproved
+  PaperSoakApproved --> LiveApproved
+  LiveApproved --> LiveCanary
+  LiveCanary --> Live
+  Live --> Paused
+  LiveCanary --> Paused
+  PaperDeployed --> Paused
+  Paused --> PaperDeployed
+  Paused --> Archived
+  Live --> Archived

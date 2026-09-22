@@ -2,6 +2,7 @@ from google.adk.agents import Agent
 from dotenv import load_dotenv
 
 from . import tools as tools
+from .trading_agent import trading_proposal_agent
 
 load_dotenv()
 
@@ -87,5 +88,6 @@ Once all processes are complete, report the final completion to the user.
     ),
     sub_agents=[
         workflow_planner_agent,
+        trading_proposal_agent,
     ]
 )
