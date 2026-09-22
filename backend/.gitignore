@@ -3,6 +3,13 @@
 
 ### dotenv ###
 .env
+.venv/
+venv/
+.verify-bridge.sqlite
+.verify-*.sqlite
+.verify-*.log
+.verify-*.json
+.verify-*.jsonl
 
 ### PyCharm ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio, WebStorm and Rider

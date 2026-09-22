@@ -181,24 +181,58 @@ class TradingBridge:
         # Default remains ledger fill so the FastAPI process does not require nautilus_trader.
         nautilus_evidence = self._try_nautilus_paper(proposal, cmd["tsd_command_id"])
 
+        require_nautilus = os.getenv("TSD_USE_NAUTILUS_PAPER", "false").lower() in {
+            "1",
+            "true",
+            "yes",
+        } and os.getenv("TSD_REQUIRE_NAUTILUS", "true").lower() in {
+            "1",
+            "true",
+            "yes",
+        }
+        if require_nautilus and (
+            not nautilus_evidence
+            or nautilus_evidence.get("error")
+            or nautilus_evidence.get("engine") == "plan_only_fallback"
+        ):
+            self.store.append_event(
+                "paper.nautilus_required_failed",
+                {
+                    "proposal_id": proposal.proposal_id,
+                    "tsd_command_id": cmd["tsd_command_id"],
+                    "evidence": nautilus_evidence,
+                },
+            )
+            raise ValueError(
+                "Nautilus paper execution required but unavailable "
+                f"(evidence={nautilus_evidence}). "
+                "Set TSD_NAUTILUS_PYTHON to the spike venv, or set "
+                "TSD_REQUIRE_NAUTILUS=false to allow ledger_sim."
+            )
+
         engine_oid = (
             nautilus_evidence.get("engine_client_order_id")
-            if nautilus_evidence
+            if nautilus_evidence and not nautilus_evidence.get("error")
             else f"PAPER-{uuid4().hex[:12]}"
+        )
+        nautilus_ok = bool(
+            nautilus_evidence
+            and not nautilus_evidence.get("error")
+            and nautilus_evidence.get("engine") != "plan_only_fallback"
         )
         self.store.mark_command_submitted(
             cmd["tsd_command_id"],
             engine_client_order_id=engine_oid,
             broker_order_id=(
                 nautilus_evidence.get("broker_order_id")
-                if nautilus_evidence
+                if nautilus_ok
                 else f"SIM-{engine_oid}"
             ),
         )
 
         # Apply paper fill: set position to target (Nautilus evidence must match)
         target_qty = str(proposal.plan.target_quantity)
-        if nautilus_evidence and nautilus_evidence.get("final_position"):
+        if nautilus_ok and nautilus_evidence.get("final_position"):
             target_qty = nautilus_evidence["final_position"]
         self.store.set_position(proposal.plan.instrument_id, target_qty)
         proposal.tsd_command_id = cmd["tsd_command_id"]
@@ -215,9 +249,11 @@ class TradingBridge:
                 "target_quantity": str(proposal.plan.target_quantity),
                 "engine_client_order_id": engine_oid,
                 "execution_engine": (
-                    "nautilus_trader" if nautilus_evidence else "ledger_sim"
+                    nautilus_evidence.get("engine", "nautilus_trader")
+                    if nautilus_ok
+                    else "ledger_sim"
                 ),
-                "nautilus": nautilus_evidence,
+                "nautilus": nautilus_evidence if nautilus_ok else None,
             },
         )
         return proposal
@@ -277,7 +313,26 @@ class TradingBridge:
             fill = _find("trading.order.filled.v1")
             pos = _find("trading.position.updated.v1")
             planned = _find("trading.target.planned.v1")
+            fallback = _find("trading.worker.fallback.v1")
             engine = fill.get("engine") or planned.get("engine") or "nautilus_worker"
+
+            # Never treat plan_only_fallback as a successful Nautilus run.
+            if fallback or engine == "plan_only_fallback":
+                return {
+                    "error": "nautilus_fallback",
+                    "detail": fallback.get("error") or "plan_only_fallback",
+                    "engine": "plan_only_fallback",
+                    "subprocess_rc": proc.returncode,
+                    "jsonl": str(out),
+                }
+
+            if proc.returncode != 0 and not fill:
+                return {
+                    "error": "worker_subprocess_failed",
+                    "detail": (proc.stderr or proc.stdout or "")[-2000:],
+                    "subprocess_rc": proc.returncode,
+                }
+
             return {
                 "accepted": True,
                 "duplicate": False,

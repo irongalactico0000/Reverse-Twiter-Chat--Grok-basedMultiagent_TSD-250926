@@ -3,7 +3,18 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..trading.safety import require_trading_mutation, require_trading_read, trading_safety_status
+try:
+    from trading.safety import (  # type: ignore[no-redef]
+        require_trading_mutation,
+        require_trading_read,
+        trading_safety_status,
+    )
+except ImportError:  # package layout: back-end.trading_bridge
+    from ..trading.safety import (
+        require_trading_mutation,
+        require_trading_read,
+        trading_safety_status,
+    )
 
 from .facade import get_bridge
 from .models import ApprovalRequest, TargetPositionRequest, TargetProposal
@@ -14,7 +25,10 @@ router = APIRouter(prefix="/api/v1/bridge", tags=["Trading Bridge (paper)"])
 def _account_capabilities() -> list[dict]:
     """Per-broker capability chips — UI must not invent Full/Data/Live flags."""
     try:
-        from ..trading.broker_pool import get_pool
+        try:
+            from trading.broker_pool import get_pool  # type: ignore[no-redef]
+        except ImportError:
+            from ..trading.broker_pool import get_pool
 
         pool = get_pool()
         return [

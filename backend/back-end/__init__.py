@@ -1,3 +1,7 @@
-from . import agents, conversation, node
+"""Package marker. Heavy subpackages are imported by callers, not here.
 
-__all__ = ["agents", "conversation", "node"]
+Avoid eager `agents`/`conversation` imports so the slim paper API
+(`trading_app`) can start without google-adk installed.
+"""
+
+__all__: list[str] = []
